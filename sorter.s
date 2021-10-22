@@ -87,7 +87,6 @@ _start:
 	movq %rax, parsedBuffer		# put into parsed buffer
 
 
-ycord:
 	# parse data to number
 	movq buffer, %rdi
 	movq fileSize, %rsi
@@ -97,12 +96,51 @@ ycord:
 	#######################
 	# Begin Counting Sort #
 	#######################
-	# find y-coordinate
-	#movq parsedBuffer, %r12
-	#movq $1, %r11
-	#movl (%r12, %r11, 8), %r10d
-	#movq (%r10d), %rdi
-	#call printNum
+
+
+	pop %r14	# clean index
+	pop %r14	# clean number of arguments
+	pop %r14	# clean name
+	pop %r14	# clean arguments
+
+
+	movq $0, %r10
+
+	movq %rsp, %r14
+	movq 8(%r14), %r14	# start of count "array"
+
+	movq parsedBuffer, %r12		# r12 = parsedBuffer
+	movq $1, %r13				# int r13 = 1
+
+cleanStackLoop:
+	push $0			# clean heap location
+	addq $1, %r10
+	# From program specifications we know that the max value will be 32767
+	cmpq $262136, %r10
+	je parsedToStack
+
+	jmp cleanStackLoop
+
+
+
+parsedToStack:
+	movq %rsp, %r15				# end of count "array"
+
+	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
+	movq %r10, %rdi				# rdi = r10
+	addq $2, %r13				# r13 += 1
+	cmpq $0, %rdi				# rdi == 0
+	jz parsedExit						# if rdi == 0 { exit }
+	#imulq $8, %rdi, %r8
+	movq %rdi, %r8
+	addq %r14, %r8
+	jmp parsedToStack
+
+parsedExit:	
+	movq $560, %rdi
+
+	#movq 8(%r14, %rdi), %rdi
+	call printNum
 
 	movq $1, %r13				# int r13 = 1
 printLoop:

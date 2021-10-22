@@ -235,8 +235,8 @@ intFromString:
 # Print RDI as an unsigned integer following by a newline.
 # Note: the function does not follow the ordinary calling convention,
 #       but restores all registers.
-.type printNum, @function
 .globl printNum
+.type printNum, @function
 printNum:
 	push %rbp
 	movq %rsp, %rbp
