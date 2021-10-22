@@ -19,6 +19,10 @@
 		.space 8
 	buffer:
 		.space 8
+	parsedBuffer: 
+		.space 8
+	lineCount: 
+		.space 8
 .section .text
 .globl _start
 
@@ -48,7 +52,8 @@ _start:
 	# allocate fileSize to buffer
 	movq fileSize, %rdi
 	call allocate		
-	movq %rax, buffer	# save pointer to buffer
+	movq %rax, buffer	# save address to buffer
+
 
 	# Read
 	movq fileDescriptor, %rdi 	# what should we read
@@ -57,18 +62,52 @@ _start:
 	movq fileSize, %rdx 		# how much to read
 	syscall 			# call! 
 
-	# print
-	movq $1, %rdi 		
-	movq buffer, %rsi
-	movq fileSize, %rdx
-	movq $1, %rax
-	syscall
 
 	# close file
 	movq $3, %rax			# close the file
 	movq fileDescriptor, %rdi	# close filedescriptor
 	syscall
 
+	# give us a reference 
+	#addq $fileSize, fileSize
+	movq fileSize, %rdi
+	call allocate		
+	movq %rax, parsedBuffer
+
+	# get number of lines
+	movq buffer, %rdi	
+	movq fileSize, %rsi		
+	call getLineCount
+
+
+	# Allocate space for parsedBuffer
+	movq %rax, lineCount		# get number of lines into lineCount
+	imul $16, lineCount, %rdi 	# 2 numbers, each 8 byte
+	call allocate			# allocate
+	movq %rax, parsedBuffer		# put into parsed buffer
+
+
+	# parse data to number
+	movq buffer, %rdi
+	movq fileSize, %rsi
+	movq parsedBuffer, %rdx
+	call parseData
+
+	movq parsedBuffer, %rdi
+	imulq $16, lineCount, %rsi
+	call printNum
+
+	#######################
+	# Begin Counting Sort #
+	#######################
+
+	# find y-coordinate
+y_coord_loop:
+	movl (parsedBuffer), %eax
+	movq (%eax), %rdi
+	movq $1, %rdi
+	movq $1, %rsi
+	call printNum
 
 exit:
 	movq $60, %rax
