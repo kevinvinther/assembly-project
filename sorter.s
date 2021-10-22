@@ -83,31 +83,37 @@ _start:
 	# Allocate space for parsedBuffer
 	movq %rax, lineCount		# get number of lines into lineCount
 	imul $16, lineCount, %rdi 	# 2 numbers, each 8 byte
-	call allocate			# allocate
+	call allocate				# allocate
 	movq %rax, parsedBuffer		# put into parsed buffer
 
 
+ycord:
 	# parse data to number
 	movq buffer, %rdi
 	movq fileSize, %rsi
 	movq parsedBuffer, %rdx
 	call parseData
 
-	movq parsedBuffer, %rdi
-	imulq $16, lineCount, %rsi
-	call printNum
-
 	#######################
 	# Begin Counting Sort #
 	#######################
-
 	# find y-coordinate
-y_coord_loop:
-	movl (parsedBuffer), %eax
-	movq (%eax), %rdi
-	movq $1, %rdi
-	movq $1, %rsi
-	call printNum
+	#movq parsedBuffer, %r12
+	#movq $1, %r11
+	#movl (%r12, %r11, 8), %r10d
+	#movq (%r10d), %rdi
+	#call printNum
+
+	movq $1, %r13				# int r13 = 1
+printLoop:
+	movq parsedBuffer, %r12		# r12 = parsedBuffer
+	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
+	movq %r10, %rdi				# rdi = r10
+	addq $2, %r13				# r13 += 2
+	cmpq $0, %rdi				# rdi == 0
+	jz exit						# if rdi == 0 { exit }
+	call printNum				# print(rdi) 
+	jmp printLoop
 
 exit:
 	movq $60, %rax
@@ -115,6 +121,7 @@ exit:
 	syscall
 
 print_error:
+	# Africa by TODO
 	movq $errorMessage, %rdi
-	call printString
+	call printError
 	jmp exit
