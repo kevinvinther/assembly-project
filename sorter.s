@@ -93,6 +93,8 @@ _start:
 	movq parsedBuffer, %rdx
 	call parseData
 
+
+countingSort: 
 	#######################
 	# Begin Counting Sort #
 	#######################
@@ -115,29 +117,42 @@ _start:
 cleanStackLoop:
 	push $0			# clean heap location
 	addq $1, %r10
+
+	# Put reference to last value in %r15
+	movq %rsp, %r15				# end of count "array"
 	# From program specifications we know that the max value will be 32767
-	cmpq $262136, %r10
-	je parsedToStack
+	cmpq $262136, %r10	# TODO: TEST SENERE
+	je p
 
 	jmp cleanStackLoop
-
-
-
-parsedToStack:
-	movq %rsp, %r15				# end of count "array"
+p:
 
 	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
 	movq %r10, %rdi				# rdi = r10
 	addq $2, %r13				# r13 += 1
 	cmpq $0, %rdi				# rdi == 0
 	jz parsedExit						# if rdi == 0 { exit }
-	#imulq $8, %rdi, %r8
-	movq %rdi, %r8
-	addq %r14, %r8
-	jmp parsedToStack
+
+	# %rdi = yi
+	# movq (%r14, %rdi, 8), %rsp
+	movq %r14, %rsp
+	xor %rax, %rax
+
+	addq %rdi, %rax
+	imulq $8, %rax
+
+	addq %rax, %rsp
+	movq %rsp, %rax
+	pop %r15
+	# og det var her vi begyndte at lave insertion sort
+	# +1 til r14(start) + rdi * 8
+	
+
+	jmp p
 
 parsedExit:	
 	movq $560, %rdi
+	
 
 	#movq 8(%r14, %rdi), %rdi
 	call printNum
