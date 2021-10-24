@@ -20,9 +20,6 @@
 # parseData:                    #
 #   convert ascii to numbers    #
 #                               #
-# swap:		                    #
-#   swaps two registers %rdi 	#
-#       %rsi                    #
 #################################
 
 #################################
@@ -288,11 +285,3 @@ printNum:
 	movq %rbp, %rsp
 	pop %rbp
 	ret
-
-#####################################
-# 				swap				#
-#####################################
-
-.globl swap
-.type swap, @function
-# x1, y1 = 

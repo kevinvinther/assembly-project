@@ -11,8 +11,6 @@
 .section .data
 	errorMessage: 
 		.string "Failed to open file. Did you put in a correct format?\n"
-	fileName:
-		.space 8
 	fileSize:
 		.space 8
 	fileDescriptor:
@@ -94,7 +92,7 @@ _start:
 	call parseData
 
 
-# TODO: Remove when done
+# TODO: Remove when donem
 # TODO: take shower
 insertSort: 
 	########################
@@ -107,37 +105,60 @@ insertSort:
 
 
 	movq $2, %r13					# r13 = 2, skip first line
-	imul $2, lineCount, %rax		# rax = 2*lineCount
-sortLoop1:					# first loop
+	imul $2, lineCount, %rax		# rax = 2 * lineCount
 
-	movq parsedBuffer, %r12	# r12 = parsedBuffer 
+	movq parsedBuffer, %r12		# r12 = parsedBuffer 
+sortLoop1:						# first loop
 	movq (%r12, %r13, 8), %r10	# x-coord in r10
 	movq 8(%r12, %r13, 8), %r11	# y-coord in r11
+	movq %r13, %rdi			# counter to decrement
 	jmp sortLoop2
 
-	cmpq %rax, %r13			# if all line have been read
-	je printLoop			# print results
-	inc %r13				# ++r13
-	jmp sortLoop1			# loop
+sortLoop1Exit:
+	cmpq %rax, %r13				# if all coords have been read
+	je printLoopBegin				# print results
+	addq $2, %r13				# r13 += 2
+	jmp sortLoop1				# loop
 
 	
 sortLoop2:
 	
-	subq $2, %r13, %rdi		# counter to decrement
-
+	subq $2, %rdi
+	movq 8(%r12, %rdi, 8), %r15	# prev y val to cmp to
 	
+	cmpq %r11, %r15
+	jl moveCoords
 
-	cmpq $0, %rdi	# if counter rdi is 0
-	jz sortLoop1	# loop is done return to loop 1
+sortLoop2Exit:
+	cmpq $1, %rdi	# if counter rdi is 0
+	jle sortLoop1Exit	# loop is done return to loop 1
 	subq $2, %rdi	# sub 2 from counter
 	jmp sortLoop2	# loop
 
+moveCoords:
+	movq (%r12, %rdi, 8), %r14 	# prev x val
+
+	# x1 = r10
+	# y1 = r11
+	# x2 = r14
+	# y2 = r15
+
+	movq %r10, (%r12, %rdi, 8)	# move x1 to x2
+	movq %r11, 8(%r12, %rdi, 8)	# move y1 to y2
+
+	movq %r14, (%r12, %r13, 8)	# move x2 to x1
+	movq %r15, 8(%r12, %r13, 8)	# move y2 to y1
+
+	jmp sortLoop2Exit
+
+printLoopBegin:
 	xor %r13, %r13				# r13 = 0
 printLoop:
 	movq parsedBuffer, %r12		# r12 = parsedBuffer
 	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
 	movq %r10, %rdi				# rdi = r10
-	addq $1, %r13				# r13 += 2
+	addq $1, %r13				# r13 += 1, if you want to print all numbers
+								# 		 2, if you want to print y-values
 	cmpq $0, %rdi				# rdi == 0
 	jz exit						# if rdi == 0 { exit }
 	call printNum				# print(rdi) 
