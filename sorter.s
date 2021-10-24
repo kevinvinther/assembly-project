@@ -1,8 +1,8 @@
 #########################
-#	 Sorter		#
-#			#
-#	Authors:	#
-#     Kevin Vinther	#
+#		 Sorter			#
+#						#
+#		Authors:		#
+#     Kevin Vinther		#
 #    Mikkel Asmussen  	#
 #########################
 
@@ -28,43 +28,43 @@
 
 _start:
 	# Get filename and open file
-	movq %rsp, %rbp		# Move stack pointer to rbp
+	movq %rsp, %rbp			# Move stack pointer to rbp
 	movq 16(%rbp), %rdi 	# Get filename and put it in rdi 
 
 	# Read the file
-	movq $2, %rax		# Open syscall
-	movq $0, %rsi 		# no flags
-	movq $0666, %rdx 	# set mode to 0666 so file is opened for reading and writing for all users
-	syscall			# syscall
+	movq $2, %rax			# Open syscall
+	movq $0, %rsi 			# no flags
+	movq $0666, %rdx 		# set mode to 0666 so file is opened for reading and writing for all users
+	syscall					# syscall
 
 	# check if the file exists 
-	cmpq $0, %rax		# if it returns error
-	jl print_error		# jump to error
+	cmpq $0, %rax			# if it returns error
+	jl print_error			# jump to error
 
 	# move file descriptor to rdi (for file size) and var fileDescriptor	
 	movq %rax, %rdi
 	movq %rax, fileDescriptor
 
 	# get file size
-	call getFileSize	# get filesize
+	call getFileSize		# get filesize
 	movq %rax, fileSize 	# put filesize in fileSize
 
 	# allocate fileSize to buffer
 	movq fileSize, %rdi
 	call allocate		
-	movq %rax, buffer	# save address to buffer
+	movq %rax, buffer		# save address to buffer
 
 
 	# Read
 	movq fileDescriptor, %rdi 	# what should we read
-	movq $0, %rax			# read
-	movq buffer, %rsi 		# buffer
+	movq $0, %rax				# read
+	movq buffer, %rsi 			# buffer
 	movq fileSize, %rdx 		# how much to read
-	syscall 			# call! 
+	syscall 					# call! 
 
 
 	# close file
-	movq $3, %rax			# close the file
+	movq $3, %rax				# close the file
 	movq fileDescriptor, %rdi	# close filedescriptor
 	syscall
 
@@ -94,75 +94,50 @@ _start:
 	call parseData
 
 
-countingSort: 
-	#######################
-	# Begin Counting Sort #
-	#######################
+# TODO: Remove when done
+# TODO: take shower
+insertSort: 
+	########################
+	# Begin Insertion Sort #
+	########################
+
+	movq lineCount, %rax	# put linecount in rax register
+	cmpq $1, %rax			# if the linecount is <1
+	jle printLoop			# exit, the list is already sorted
 
 
-	pop %r14	# clean index
-	pop %r14	# clean number of arguments
-	pop %r14	# clean name
-	pop %r14	# clean arguments
+	movq $2, %r13					# r13 = 2, skip first line
+	imul $2, lineCount, %rax		# rax = 2*lineCount
+sortLoop1:					# first loop
 
+	movq parsedBuffer, %r12	# r12 = parsedBuffer 
+	movq (%r12, %r13, 8), %r10	# x-coord in r10
+	movq 8(%r12, %r13, 8), %r11	# y-coord in r11
+	jmp sortLoop2
 
-	movq $0, %r10
+	cmpq %rax, %r13			# if all line have been read
+	je printLoop			# print results
+	inc %r13				# ++r13
+	jmp sortLoop1			# loop
 
-	movq %rsp, %r14
-	movq 8(%r14), %r14	# start of count "array"
+	
+sortLoop2:
+	
+	subq $2, %r13, %rdi		# counter to decrement
 
-	movq parsedBuffer, %r12		# r12 = parsedBuffer
-	movq $1, %r13				# int r13 = 1
-
-cleanStackLoop:
-	push $0			# clean heap location
-	addq $1, %r10
-
-	# Put reference to last value in %r15
-	movq %rsp, %r15				# end of count "array"
-	# From program specifications we know that the max value will be 32767
-	cmpq $262136, %r10	# TODO: TEST SENERE
-	je p
-
-	jmp cleanStackLoop
-p:
-
-	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
-	movq %r10, %rdi				# rdi = r10
-	addq $2, %r13				# r13 += 1
-	cmpq $0, %rdi				# rdi == 0
-	jz parsedExit						# if rdi == 0 { exit }
-
-	# %rdi = yi
-	# movq (%r14, %rdi, 8), %rsp
-	movq %r14, %rsp
-	xor %rax, %rax
-
-	addq %rdi, %rax
-	imulq $8, %rax
-
-	addq %rax, %rsp
-	movq %rsp, %rax
-	pop %r15
-	# og det var her vi begyndte at lave insertion sort
-	# +1 til r14(start) + rdi * 8
 	
 
-	jmp p
+	cmpq $0, %rdi	# if counter rdi is 0
+	jz sortLoop1	# loop is done return to loop 1
+	subq $2, %rdi	# sub 2 from counter
+	jmp sortLoop2	# loop
 
-parsedExit:	
-	movq $560, %rdi
-	
-
-	#movq 8(%r14, %rdi), %rdi
-	call printNum
-
-	movq $1, %r13				# int r13 = 1
+	xor %r13, %r13				# r13 = 0
 printLoop:
 	movq parsedBuffer, %r12		# r12 = parsedBuffer
 	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
 	movq %r10, %rdi				# rdi = r10
-	addq $2, %r13				# r13 += 2
+	addq $1, %r13				# r13 += 2
 	cmpq $0, %rdi				# rdi == 0
 	jz exit						# if rdi == 0 { exit }
 	call printNum				# print(rdi) 
@@ -174,7 +149,6 @@ exit:
 	syscall
 
 print_error:
-	# Africa by TODO
 	movq $errorMessage, %rdi
 	call printError
 	jmp exit

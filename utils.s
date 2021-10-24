@@ -20,10 +20,13 @@
 # parseData:                    #
 #   convert ascii to numbers    #
 #                               #
+# swap:		                    #
+#   swaps two registers %rdi 	#
+#       %rsi                    #
 #################################
 
 #################################
-#          printbuffer	            #
+#          printbuffer	        #
 #################################
 .globl printNum			# void print(int n, int fileSize)
 .type print, @function
@@ -285,3 +288,11 @@ printNum:
 	movq %rbp, %rsp
 	pop %rbp
 	ret
+
+#####################################
+# 				swap				#
+#####################################
+
+.globl swap
+.type swap, @function
+# x1, y1 = 
