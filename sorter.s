@@ -26,7 +26,9 @@
 
 _start:
 	# Get filename and open file
-	movq %rsp, %rbp			# Move stack pointer to rbp
+	movq %rsp, %rbp
+	
+	# Move stack pointer to rbp
 	movq 16(%rbp), %rdi 	# Get filename and put it in rdi 
 
 	# Read the file
@@ -109,21 +111,22 @@ insertSort:
 
 	movq parsedBuffer, %r12		# r12 = parsedBuffer 
 sortLoop1:						# first loop
-	movq (%r12, %r13, 8), %r10	# x-coord in r10
-	movq 8(%r12, %r13, 8), %r11	# y-coord in r11
 	movq %r13, %rdi			# counter to decrement
 	jmp sortLoop2
 
 sortLoop1Exit:
 	cmpq %rax, %r13				# if all coords have been read
-	je printLoopBegin				# print results
+	je printLoopBegin			# print results
 	addq $2, %r13				# r13 += 2
 	jmp sortLoop1				# loop
 
 	
 sortLoop2:
+
+	movq (%r12, %r13, 8), %r10	# x-coord in r10
+	movq 8(%r12, %r13, 8), %r11	# y-coord in r11
 	
-	subq $2, %rdi
+	subq $2, %rdi		# rdi - 2
 	movq 8(%r12, %rdi, 8), %r15	# prev y val to cmp to
 	
 	cmpq %r11, %r15
@@ -136,18 +139,24 @@ sortLoop2Exit:
 	jmp sortLoop2	# loop
 
 moveCoords:
+
+	# x1 = r10 [(%r12, %r13, 8)]
+	# y1 = r11 [8(%r12, %r13, 8)]
+
+	# x2 = r14 [(%r12, %rdi, 8)]
+	# y2 = r15 [8(%r12, %rdi, 8)]
 	movq (%r12, %rdi, 8), %r14 	# prev x val
 
-	# x1 = r10
-	# y1 = r11
-	# x2 = r14
-	# y2 = r15
 
 	movq %r10, (%r12, %rdi, 8)	# move x1 to x2
 	movq %r11, 8(%r12, %rdi, 8)	# move y1 to y2
 
+	# addq $2, %rdi		# make rdi point to next coord pair
+
 	movq %r14, (%r12, %r13, 8)	# move x2 to x1
 	movq %r15, 8(%r12, %r13, 8)	# move y2 to y1
+
+	# subq $2, %rdi		# reset rdi to intended value
 
 	jmp sortLoop2Exit
 
@@ -159,8 +168,9 @@ printLoop:
 	movq %r10, %rdi				# rdi = r10
 	addq $1, %r13				# r13 += 1, if you want to print all numbers
 								# 		 2, if you want to print y-values
-	cmpq $0, %rdi				# rdi == 0
-	jz exit						# if rdi == 0 { exit }
+	imul $4, lineCount, %rax
+	cmpq %rax, %r13				# rdi == 0
+	jg exit						# if rdi == 0 { exit }
 	call printNum				# print(rdi) 
 	jmp printLoop
 
