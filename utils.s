@@ -285,3 +285,54 @@ printNum:
 	movq %rbp, %rsp
 	pop %rbp
 	ret
+
+.globl printNumTab
+.type printNumTab, @function
+printNumTab:
+	push %rbp
+	movq %rsp, %rbp
+
+	# save
+	push %rax
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	push %r9
+
+	movq %rdi, %rax # arg
+
+	movq $1, %r9 # we always print "\n"
+	push $9 # '\t'
+.LprintNumTab_convertLoop:
+	movq $0, %rdx
+	movq $10, %rcx
+	idivq %rcx
+	addq $48, %rdx # '0' is 48
+	push %rdx
+	addq $1, %r9
+	cmpq $0, %rax   
+	jne .LprintNumTab_convertLoop
+.LprintNumTab_printLoop:
+	movq $1, %rax # sys_write
+	movq $1, %rdi # stdout
+	movq %rsp, %rsi # buf
+	movq $1, %rdx # len
+	syscall
+	addq $8, %rsp
+	addq $-1, %r9
+	jne .LprintNumTab_printLoop
+
+	# restore
+	pop %r9
+	pop %r8
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+	pop %rax
+
+	movq %rbp, %rsp
+	pop %rbp
+	ret

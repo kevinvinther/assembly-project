@@ -110,76 +110,64 @@ insertSort:
 	imul $2, lineCount, %rax		# rax = 2 * lineCount
 
 	movq parsedBuffer, %r12		# r12 = parsedBuffer 
-sortLoop1:						# first loop
-	movq %r13, %rdi			# counter to decrement
-	jmp sortLoop2
-
-sortLoop1Exit:
-	cmpq %rax, %r13				# if all coords have been read
-	je printLoopBegin			# print results
-	addq $2, %r13				# r13 += 2
-	jmp sortLoop1				# loop
-
 	
-sortLoop2:
+outerLoop:
+	cmpq %rax, %r13		# If the current line == number of lines
+	je printLoopBegin	# Then print
 
-	movq (%r12, %r13, 8), %r10	# x-coord in r10
-	movq 8(%r12, %r13, 8), %r11	# y-coord in r11
+	movq %r13, %rdi		# rdi = r13, temporary counter
 	
-	subq $2, %rdi		# rdi - 2
-	movq 8(%r12, %rdi, 8), %r15	# prev y val to cmp to
+innerLoop:
+	cmpq %rdi, %rax
+	je outerLoop
+
+	movq %rdi, %rbp		# rbp = rdi, temporary counter 2  
+	subq $2, %rbp		# rbp -= 2 
+
+	movq 8(%r12, %rbp, 8), %r14	# r14 = the rbp y-value, y[rbp]
+	cmpq 8(%r12, %rdi, 8), %r14	# if y[rdi] < y[rbp]
+	jl outerLoopEnd				# 	then jump to outerLoopEnd
 	
-	cmpq %r11, %r15
-	jl moveCoords
+	movq 8(%r12, %rdi, 8), %r15	# r15 = the rdi 
+	movq (%r12, %rdi, 8), %r8
+	movq (%r12, %rbp, 8), %r9
 
-sortLoop2Exit:
-	cmpq $1, %rdi	# if counter rdi is 0
-	jle sortLoop1Exit	# loop is done return to loop 1
-	subq $2, %rdi	# sub 2 from counter
-	jmp sortLoop2	# loop
+	# swap the x values
+	movq %r9, (%r12, %rdi, 8)
+	movq %r8, (%r12, %rbp, 8)
+	# swap the y values
+	movq %r15, 8(%r12, %rbp, 8)
+	movq %r14, 8(%r12, %rdi, 8)
 
-moveCoords:
+	subq $2, %rdi
+	jmp innerLoop
 
-	# x1 = r10 [(%r12, %r13, 8)]
-	# y1 = r11 [8(%r12, %r13, 8)]
-
-	# x2 = r14 [(%r12, %rdi, 8)]
-	# y2 = r15 [8(%r12, %rdi, 8)]
-	movq (%r12, %rdi, 8), %r14 	# prev x val
-
-
-	movq %r10, (%r12, %rdi, 8)	# move x1 to x2
-	movq %r11, 8(%r12, %rdi, 8)	# move y1 to y2
-
-	# addq $2, %rdi		# make rdi point to next coord pair
-
-	movq %r14, (%r12, %r13, 8)	# move x2 to x1
-	movq %r15, 8(%r12, %r13, 8)	# move y2 to y1
-
-	# subq $2, %rdi		# reset rdi to intended value
-
-	jmp sortLoop2Exit
-
+outerLoopEnd:
+	addq $2, %r13
+	jmp outerLoop
 printLoopBegin:
 	xor %r13, %r13				# r13 = 0
-printLoop:
+	imul $2, lineCount, %rax
 	movq parsedBuffer, %r12		# r12 = parsedBuffer
+printLoop:
 	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
 	movq %r10, %rdi				# rdi = r10
-	addq $1, %r13				# r13 += 1, if you want to print all numbers
-								# 		 2, if you want to print y-values
-	imul $4, lineCount, %rax
-	cmpq %rax, %r13				# rdi == 0
-	jg exit						# if rdi == 0 { exit }
-	call printNum				# print(rdi) 
-	jmp printLoop
+	call printNumTab
 
+	movq 8(%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
+	movq %r10, %rdi				# rdi = r10
+
+	addq $2, %r13				# r13 += 2
+	call printNum				# print(rdi) 
+	cmpq %rax, %r13				# rdi == 0
+	je exit						# if rdi == 0 { exit }
+	jmp printLoop
 exit:
 	movq $60, %rax
 	movq $0, %rdi
 	syscall
-
 print_error:
 	movq $errorMessage, %rdi
 	call printError
 	jmp exit
+	
