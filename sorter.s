@@ -69,7 +69,7 @@ _start:
 	syscall
 
 	# give us a reference 
-	#addq $fileSize, fileSize
+	# addq $fileSize, fileSize
 	movq fileSize, %rdi
 	call allocate		
 	movq %rax, parsedBuffer
@@ -79,21 +79,21 @@ _start:
 	movq fileSize, %rsi		
 	call getLineCount
 
-
+	
 	# Allocate space for parsedBuffer
 	movq %rax, lineCount		# get number of lines into lineCount
 	imul $16, lineCount, %rdi 	# 2 numbers, each 8 byte
 	call allocate				# allocate
 	movq %rax, parsedBuffer		# put into parsed buffer
 
-
+	
 	# parse data to number
 	movq buffer, %rdi
 	movq fileSize, %rsi
 	movq parsedBuffer, %rdx
 	call parseData
 
-
+	
 # TODO: Remove when donem
 # TODO: take shower
 insertSort: 
@@ -118,28 +118,28 @@ outerLoop:
 	movq %r13, %rdi		# rdi = r13, temporary counter
 	
 innerLoop:
-	cmpq %rdi, %rax
+	cmpq $0, %rdi
 	je outerLoop
 
-	movq %rdi, %rbp		# rbp = rdi, temporary counter 2  
-	subq $2, %rbp		# rbp -= 2 
+	movq %rdi, %r10		# rbp = rdi, temporary counter 2  
+	subq $2, %r10		# rbp -= 2 
 
-	movq 8(%r12, %rbp, 8), %r14	# r14 = the rbp y-value, y[rbp]
+	movq 8(%r12, %r10, 8), %r14	# y_1
 	cmpq 8(%r12, %rdi, 8), %r14	# if y[rdi] < y[rbp]
 	jl outerLoopEnd				# 	then jump to outerLoopEnd
 	
-	movq 8(%r12, %rdi, 8), %r15	# r15 = the rdi 
-	movq (%r12, %rdi, 8), %r8
-	movq (%r12, %rbp, 8), %r9
+	movq 8(%r12, %rdi, 8), %r15	#	the second y-element
+	movq (%r12, %rdi, 8), %r8	# the second x-element
+	movq (%r12, %r10, 8), %r9	# the first x-element
 
 	# swap the x values
 	movq %r9, (%r12, %rdi, 8)
-	movq %r8, (%r12, %rbp, 8)
+	movq %r8, (%r12, %r10, 8)
 	# swap the y values
-	movq %r15, 8(%r12, %rbp, 8)
+	movq %r15, 8(%r12, %r10, 8)
 	movq %r14, 8(%r12, %rdi, 8)
 
-	subq $2, %rdi
+	subq $2, %rdi		# sub from decreasing counter
 	jmp innerLoop
 
 outerLoopEnd:
