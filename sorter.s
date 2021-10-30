@@ -168,10 +168,8 @@ startSortBuffer:
 	imulq $16, %rdi	# 2 numbers, each 8 bytes, 
 	call allocate
 	movq %rax, sortedBuffer
-	
-	
 
-	movq $1, %rdi # Counter
+	movq $0, %rdi # Counter
 
 	movq lineCount, %r8
 	imulq $2, %r8
@@ -180,20 +178,18 @@ startSortBuffer:
 
 	movq countingBuffer, %r10
 sortBuffer:
-	movq (%r11, %rdi, 8), %r9
+	movq 8(%r11, %rdi, 8), %r9
 
 	movq (%r10, %r9, 8), %r13
 
 	imulq $2, %r13 # r12 = r12*2
 
-	movq %r9, 8(%r14, %r13, 8)		# y-coord in place
-
-	
+	movq %r9, -8(%r14, %r13, 8)		# y-coord in place
 
 	subq $1, (%r10, %r9, 8)
 
-	movq -8(%r11, %rdi, 8), %r9
-	movq %r9, (%r14, %r13, 8)	# place x-val for y-coord
+	movq (%r11, %rdi, 8), %r9
+	movq %r9, -16(%r14, %r13, 8)	# place x-val for y-coord
 
 	addq $2, %rdi
 	cmpq %rdi, %r8
