@@ -97,17 +97,13 @@ _start:
 	movq parsedBuffer, %rdx
 	call parseData
 
-	
-# TODO: Remove when donem
-# TODO: take shower
-countingSort: 
 	#########################
 	# Begin Counting Sort 	#
 	#########################
 
 	movq lineCount, %rax	# put linecount in rax register
 	cmpq $1, %rax			# if the linecount is <1
-	jle printLoop			# exit, the list is already sorted
+	jle printOutput			# exit, the list is already sorted
 
 
 	movq parsedBuffer, %r12		# r12 = parsedBuffer 
@@ -161,7 +157,6 @@ getPositions:
 
 	movq %r10, countingBuffer
 
-startSortBuffer:
 	# Start at index 0
 	# Allocate space for our sorted buffer
 	movq lineCount, %rdi
@@ -197,23 +192,16 @@ sortBuffer:
 
 	movq sortedBuffer, %r10
 
-printLoopBegin:
-	xor %r13, %r13				# r13 = 0
-	imul $2, lineCount, %rax
-	movq %r10, %r12		# r12 = parsedBuffer	
-printLoop:
-	movq (%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
-	movq %r10, %rdi				# rdi = r10
-	call printNumTab
+printOutput:
+	movq sortedBuffer, %rsi
+	imulq $2, lineCount, %rcx
+	movq buffer, %rdi
+	movq fileSize, %r10
 
-	movq 8(%r12, %r13, 8), %r10	# r10 = r12[r13*8] 
-	movq %r10, %rdi				# rdi = r10
 
-	addq $2, %r13				# r13 += 2
-	call printNum				# print(rdi) 
-	cmpq %rax, %r13				# rdi == 0
-	je exit						# if rdi == 0 { exit }
-	jmp printLoop
+	call printNumbers
+
+
 exit:
 	movq $60, %rax
 	movq $0, %rdi

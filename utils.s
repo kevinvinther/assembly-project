@@ -229,110 +229,64 @@ intFromString:
     ret
 
 #####################################
-# 			printnum				#
+# 			printnumbers			#
 #####################################
 
 # Print RDI as an unsigned integer following by a newline.
 # Note: the function does not follow the ordinary calling convention,
 #       but restores all registers.
-.globl printNum
-.type printNum, @function
-printNum:
-	push %rbp
-	movq %rsp, %rbp
+.global printNumbers
+.type printNumbers, @function
+printNumbers:
+    xor %r8, %r8
 
-	# save
-	push %rax
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
-	push %r9
+    push %rbp
+    movq %rsp, %rbp 
 
-	movq %rdi, %rax # arg
+	movq %r10, %r15
 
-	movq $1, %r9 # we always print "\n"
-	push $10 # '\n'
-.LprintNum_convertLoop:
-	movq $0, %rdx
-	movq $10, %rcx
-	idivq %rcx
-	addq $48, %rdx # '0' is 48
-	push %rdx
-	addq $1, %r9
-	cmpq $0, %rax   
-	jne .LprintNum_convertLoop
-.LprintNum_printLoop:
-	movq $1, %rax # sys_write
-	movq $1, %rdi # stdout
-	movq %rsp, %rsi # buf
-	movq $1, %rdx # len
-	syscall
-	addq $8, %rsp
-	addq $-1, %r9
-	jne .LprintNum_printLoop
+    sub $2, %r10
+    dec %rcx
 
-	# restore
-	pop %r9
-	pop %r8
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
-	pop %rax
+convertLoop:
+    movq (%rsi, %rcx, 8), %rax
 
-	movq %rbp, %rsp
-	pop %rbp
-	ret
+digitLoop:
+    # Grab digit, convert to ascii
+    # store in correct place
+    xor %rdx, %rdx
+    movq $10, %rbx
+    divq %rbx
+    addq $48, %rdx
+    movb %dl, (%rdi, %r10) # If the quotient is zero, the number is done
+    cmpq $0, %rax
+    je numberDone
+    dec %r10
+    jmp digitLoop
 
-.globl printNumTab
-.type printNumTab, @function
-printNumTab:
-	push %rbp
-	movq %rsp, %rbp
+numberDone:
+    dec %rcx # Point to next number
+    cmpq $0, %rcx # Are we done converting all numbers?
+    jl doneConverting # Nope, write newline, point to next good place
+    dec %r10
+    cmpq $0, %r8
+    je tab
+    movb $10, (%rdi, %r10)
+    dec %r10
+    dec %r8
+    jmp convertLoop
+tab:
+    movb $9, (%rdi, %r10)
+    dec %r10
+    inc %r8
+    jmp convertLoop
 
-	# save
-	push %rax
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
-	push %r9
-
-	movq %rdi, %rax # arg
-
-	movq $1, %r9 # we always print "\n"
-	push $9 # '\t'
-.LprintNumTab_convertLoop:
-	movq $0, %rdx
-	movq $10, %rcx
-	idivq %rcx
-	addq $48, %rdx # '0' is 48
-	push %rdx
-	addq $1, %r9
-	cmpq $0, %rax   
-	jne .LprintNumTab_convertLoop
-.LprintNumTab_printLoop:
-	movq $1, %rax # sys_write
-	movq $1, %rdi # stdout
-	movq %rsp, %rsi # buf
-	movq $1, %rdx # len
-	syscall
-	addq $8, %rsp
-	addq $-1, %r9
-	jne .LprintNumTab_printLoop
-
-	# restore
-	pop %r9
-	pop %r8
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
-	pop %rax
-
-	movq %rbp, %rsp
-	pop %rbp
-	ret
+doneConverting:
+    # Write buffer to stdout
+    movq $1, %rax
+    movq %rdi, %rsi
+    movq $1, %rdi
+    movq %r15, %rdx
+    syscall
+	leave
+    ret
