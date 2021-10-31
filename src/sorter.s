@@ -97,6 +97,7 @@ _start:
 	movq parsedBuffer, %rdx
 	call parseData
 
+
 	#########################
 	# Begin Counting Sort 	#
 	#########################
@@ -190,18 +191,12 @@ sortBuffer:
 	cmpq %rdi, %r8
 	jg sortBuffer
 
-	movq sortedBuffer, %r10
-
 printOutput:
 	movq sortedBuffer, %rsi
 	imulq $2, lineCount, %rcx
 	movq buffer, %rdi
 	movq fileSize, %r10
-
-
-	call printNumbers
-
-
+	call printNums
 exit:
 	movq $60, %rax
 	movq $0, %rdi

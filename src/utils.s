@@ -1,11 +1,9 @@
 #################################
 #           utils.s             #
-#                               #
-# print:               	        #
-#   Prints %rdi                 #
 #								#
-# printString: 					#
-#    Prints string from %rdi    #
+# printError: 					#
+#    Prints static error string #
+#		from rdi register		#
 #								#
 # allocate:                     #
 #   Takes %rdi number of bytes  #
@@ -20,41 +18,9 @@
 # parseData:                    #
 #   convert ascii to numbers    #
 #                               #
+# printNums						#
+#	prints a buffer of numbers	#
 #################################
-
-#################################
-#          printbuffer	        #
-#################################
-.globl printNum			# void print(int n, int fileSize)
-.type print, @function
-print:
-	movq %rsi, %rdx # put file size into count
-	movq %rdi, %rsi # put argument in buffer
-	movq $1, %rax	# sys_write
-	movq $1, %rdi	# write to std_out
-	syscall
-	ret
-
-#################################
-#          printString          #
-#################################
-.globl printString
-.type printString, @function
-printString:		# Start 
-	movq $-1, %rdx  # int rdx = -1 
-	movq $0, %rcx	# int rcx = 0 
-
-loop1:	# Find length of string; how many bytes to print. 
-	addq $1, %rdx		# rdx += 1
-	movq %rdi, %rsi		# string rsi = hello
-	movb (%rsi, %rcx), %bl	# put byte rsi[rcx] into bl
-	addq $1, %rcx		# rcx += 1
-	cmpq $0, %rbx		# if rbx != 0 (last, null-byte, end of string)
-	jne loop1			# jmp loop1
-
-	movq $1, %rax		# rax = 1; write system call
-	movq $1, %rdi		# rdi = 1; write to std_out
-	syscall				# write %rsi
 
 #################################
 #           printError          #
@@ -229,64 +195,72 @@ intFromString:
     ret
 
 #####################################
-# 			printnumbers			#
+# 			printNums				#
 #####################################
+#
+#		arguments needed: 
+#	%rsi: buffer that needs to be printed
+#	%rcx: amount of numbers (usually linecount * 2)
+#	%rdi: original buffer
+#	%r10: file size
+#
+#	the function puts the sorted buffer inside of the original buffer
+# 	and prints it
 
-# Print RDI as an unsigned integer following by a newline.
-# Note: the function does not follow the ordinary calling convention,
-#       but restores all registers.
-.global printNumbers
-.type printNumbers, @function
-printNumbers:
-    xor %r8, %r8
+.global printNums
+.type printNums, @function
+printNums:
+initialize:
+    xor %r8, %r8	# r8 = 0
 
-    push %rbp
-    movq %rsp, %rbp 
+    push %rbp		# put rbp to stack
+    movq %rsp, %rbp # put rsp in rbp
 
-	movq %r10, %r15
+	movq %r10, %r15	# r15 = fileSize
 
-    sub $2, %r10
-    dec %rcx
+    subq $2, %r10	# r10 -= 2
+					# orig. fileSize -= 2
+
+    subq $1, %rcx	# --rcx
+					# amount of numbers - 1
 
 convertLoop:
-    movq (%rsi, %rcx, 8), %rax
+    movq (%rsi, %rcx, 8), %rax 	# rax = rsi[rcx*8]
 
 digitLoop:
-    # Grab digit, convert to ascii
-    # store in correct place
-    xor %rdx, %rdx
-    movq $10, %rbx
-    divq %rbx
-    addq $48, %rdx
-    movb %dl, (%rdi, %r10) # If the quotient is zero, the number is done
-    cmpq $0, %rax
-    je numberDone
-    dec %r10
+    xor %rdx, %rdx	# rdx = 0 
+    movq $10, %rbx	# rbx = 10
+	divq %rbx		# rbx/rax, remainder in rdx
+    addq $48, %rdx	# rdx += 48
+
+    movb %dl, (%rdi, %r10) 	# move remainder into rdi[r10]
+    cmpq $0, %rax	
+    je numberDone	# each number has a 0 at the end, if we're at 0 we're done
+    subq $1, %r10	# fileSize -= 1, to know how far in the file we are
     jmp digitLoop
 
 numberDone:
-    dec %rcx # Point to next number
-    cmpq $0, %rcx # Are we done converting all numbers?
-    jl doneConverting # Nope, write newline, point to next good place
-    dec %r10
-    cmpq $0, %r8
-    je tab
-    movb $10, (%rdi, %r10)
-    dec %r10
-    dec %r8
+    subq $1, %rcx # next number
+    cmpq $0, %rcx # see if we're done with all numbers
+    jl convertDone# if we're done then go to done
+    subq $1, %r10	# --filesize
+    cmpq $0, %r8	# if r8==0
+    je printTab			# goto tab, we need every other number to be followed by a tab
+    movb $10, (%rdi, %r10)	# otherwise print newline
+    subq $1, %r10	# --filesize
+    subq $1, %r8	# --r8
     jmp convertLoop
-tab:
-    movb $9, (%rdi, %r10)
-    dec %r10
-    inc %r8
+printTab:
+    movb $9, (%rdi, %r10)	# 9 = tab ascii char
+    subq $1, %r10			# --filesize
+    addq $1, %r8			# ++r8				
     jmp convertLoop
 
-doneConverting:
-    # Write buffer to stdout
-    movq $1, %rax
-    movq %rdi, %rsi
-    movq $1, %rdi
-    movq %r15, %rdx
-    syscall
-	leave
+convertDone:
+    movq $1, %rax		# write syscall
+    movq %rdi, %rsi		# put rdi in buffer
+    movq $1, %rdi		# std_out
+    movq %r15, %rdx		# original filesize
+    syscall				# write!!!!!!!!!
+	pop %rbp			# put rbp back
     ret
